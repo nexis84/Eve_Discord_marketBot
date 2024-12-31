@@ -1,30 +1,20 @@
-# Use a specific Node.js version for consistency and security.
-FROM node:16.20.2-alpine AS builder
+# Use Node.js image as base
+FROM node:16
 
-# Set the working directory within the container.
+# Set working directory in container
 WORKDIR /app
 
-# Copy package files to leverage caching.
+# Copy package.json and package-lock.json (if exists)
 COPY package*.json ./
 
-# Install the node modules for your project, and perform a clean install.
-RUN npm ci --omit=dev
+# Install dependencies
+RUN npm install
 
-# Copy the rest of your application.
+# Copy all files into the container
 COPY . .
 
+# Expose port for Cloud Run
+EXPOSE 8080
 
-# Final image with minimal content
-FROM node:16.20.2-alpine
-
-WORKDIR /app
-
-# Copy just the needed files from the builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/server.js ./
-COPY --from=builder /app/package*.json ./
-# Set an environment variable to indicate we are in google cloud run
-ENV ENVIRONMENT=google_cloud_run
-
-# Execute your application.
-CMD ["node", "server.js"]
+# Run the app using node
+CMD ["node", "index.js"]
